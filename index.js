@@ -1,17 +1,22 @@
 const express = require('express');// Express makes APIs (connect fronted to database)
-
 const Redis = require('redis');//Import the Redis Class from the Library
-
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
+const options = {
+    origin: 'http://localhost:3000'// Allow out fronted to call this backend
+}
+
+//import express from 'express';
 const redisClient = Redis.createClient({
     url:`redis://localhost:6379`
 });
 
 const app = express();// Create an express application
-const port = 3000;//this is port number
+const port = 3001;//this is port number
 
 app.use(bodyParser.json());
+app.use(cors(options));//allow fronted to call backend
 
 // app.listen(3000);// Listen for web requests from the fronted and don't stop
 app.listen(port,()=>{
@@ -33,7 +38,7 @@ app.post('/boxes', async (req,res)=>{//async means we will await promises
 app.get('/boxes',async (req,res)=>{
     let boxes = await redisClient.json.get('boxes',{path: '$'});//get the boxes
     // Send boxes to the browser
-    res.send(JSON.stringify(boxes));//covert boxes to a string
+    res.json(boxes[0]);//covert boxes to a string
 });//Return boxes to the user
 
 
