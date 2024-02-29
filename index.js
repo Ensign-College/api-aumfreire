@@ -5,7 +5,7 @@ const cors = require("cors"); //cors is a library that allows us to make request
 const { addOrderItem, getOrderItem } = require("./services/orderItems");
 const { addOrder, getOrder } = require("./services/orderservice"); //import the addOrder and getOrder functions from the orderservice file
 const fs = require("fs"); //import the file system library
-const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json", "utf8"));
+const Schema = JSON.parse(fs.readFileSync("./services/orderItemSchema.json", "utf8"));
 const Ajv = require("ajv");
 const ajv = new Ajv();
 
@@ -42,19 +42,19 @@ app.post("/boxes", async (req, res) => {
 // ORDER
 app.post("/orders", async (req, res) => {
   let order = req.body; //get the order from the request body
-  let responseStatus = order.productQuantity
-    ? 200
-    : 400 && order.ShippingAddress
-    ? 200
-    : 400; //if the order has a shipping address, return 200, otherwise return 400
+  let responseStatus =
+    order.productQuantity && order.ShippingAddress ? 200 : 400; //if the order has a shipping address, return 200, otherwise return 400
 
   if (responseStatus === 200) {
     try {
       //addOrder function to handle order creating in the database
       await addOrder({ redisClient, order });
+      res
+        .status(200)
+        .json({ message: "Order added successfully", order: order });
     } catch (error) {
       console.error(error);
-      res.status(500).send("Internal server error");
+      res.status(400).send("Internal server error");
       return;
     }
   } else {
@@ -65,7 +65,6 @@ app.post("/orders", async (req, res) => {
       }${order.ShippingAddress ? "" : "ShippingAddress"}`
     );
   }
-  res.status(responseStatus).send("Order added successfully");
 }); //add an order to the list of orders
 
 app.get("/orders/:orderId", async (req, res) => {
