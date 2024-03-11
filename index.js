@@ -41,17 +41,17 @@ app.post("/boxes", async (req, res) => {
 
 // ORDER
 app.post("/orders", async (req, res) => {
-  let order = req.body; //get the order from the request body
+  let order = req.body;
+  console.log("Received order:", order); // Log received order
   let responseStatus =
-    order.productQuantity && order.ShippingAddress ? 200 : 400; //if the order has a shipping address, return 200, otherwise return 400
+    order.productQuantity && order.shippingAddress ? 200 : 400;
 
   if (responseStatus === 200) {
     try {
-      //addOrder function to handle order creating in the database
-      await addOrder({ redisClient, order });
-      res
-        .status(200)
-        .json({ message: "Order added successfully", order: order });
+      const createdOrder = await addOrder({ redisClient, order });
+      // Fetch the created order to get the orderId
+      console.log("Created order:", createdOrder); // Log created order
+      res.status(200).json({ message: "Order added successfully", order: createdOrder });
     } catch (error) {
       console.error(error);
       res.status(400).send("Internal server error");
@@ -62,10 +62,11 @@ app.post("/orders", async (req, res) => {
     res.send(
       `Missing required fields: ${
         order.productQuantity ? "" : "productQuantity"
-      }${order.ShippingAddress ? "" : "ShippingAddress"}`
+      }${order.shippingAddress ? "" : "shippingAddress"}`
     );
   }
-}); //add an order to the list of orders
+});
+
 
 app.get("/orders/:orderId", async (req, res) => {
   // get the order from the database

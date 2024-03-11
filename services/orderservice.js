@@ -1,6 +1,6 @@
 const addOrder = async ({ redisClient, order }) => {
   //Temporary hardcoding of customer ID
-  order.customerId = 3852656789;
+  // order.customerId = 
   //use the const to pull the customer ID from the order object
 
   const existingCustomer = order.customerId;
@@ -15,7 +15,10 @@ const addOrder = async ({ redisClient, order }) => {
   } else {
     throw new Error(`Customer ${customerKey} does not exist`);
   }
+  return order;
 };
+
+
 const getOrder = async ({ redisClient, orderId }) => {
   const resultObject = await redisClient.json.get(`order:${orderId}`);
   return resultObject;
