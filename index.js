@@ -1,56 +1,45 @@
-const express = require("express"); // express makes APIs - connect frotend to database
-const Redis = require("redis"); //redis is a database, import the Redis class from the redis library
-const bodyParser = require("body-parser"); //body-parser is a library that allows us to read the body of a request
-const cors = require("cors"); //cors is a library that allows us to make requests from the frontend to the backend
+const express = require("express");
+const Redis = require("redis");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 const { addOrderItem, getOrderItem } = require("./services/orderItems");
-const { addOrder, getOrder } = require("./services/orderservice"); //import the addOrder and getOrder functions from the orderservice file
-const fs = require("fs"); //import the file system library
-const Schema = JSON.parse(fs.readFileSync("./services/orderItemSchema.json", "utf8"));
+const { addOrder, getOrder } = require("./services/orderservice");
+const fs = require("fs");
 const Ajv = require("ajv");
+
+const Schema = JSON.parse(fs.readFileSync("./services/orderItemSchema.json", "utf8"));
 const ajv = new Ajv();
 
-// SERVER SETUP
-const options = {
-  origin: "http://localhost:3000", //allow requests from the frontend
-};
-//import redis from 'redis';//import redis library
-
 const redisClient = Redis.createClient({
-  url: `redis://localhost:6379`, //connect to redis on port 6379
-}); //create a redis client
-const app = express(); // create an express application
-app.use(bodyParser.json()); //use the body-parser library to read JSON from the request body
-app.use(cors(options)); //use the cors library to allow requests from the frontend
-const port = 3001; // port to run the server on
-app.listen(port, () => {
-  redisClient.connect(); //connect to redis
-  console.log(`API is listening on port: ${port}`); //template literal
-}); //listen for web requests form the frontend and don't stop () => console.log('listening at 3000')); // listen for requests on port 3000
+  url: process.env.REDIS_URL || "redis://localhost:6379",
+});
+
+const app = express();
+app.use(bodyParser.json());
+app.use(cors());
 
 app.get("/boxes", async (req, res) => {
-  let boxes = await redisClient.json.get("boxes", { path: "$" }); //get boxes from redis
-  res.json(boxes[0]); //convert boxes to a JSON string and send it to the user
-}); //return boxes to the user
+  let boxes = await redisClient.json.get("boxes", { path: "$" });
+  res.json(boxes[0]);
+});
 
 app.post("/boxes", async (req, res) => {
-  const newBox = req.body; //get the box from the request body
-  newBox.id = parseInt(await redisClient.json.arrLen("boxes", "$")) + 1; //add an id to the box, the user should not provide an id
-  await redisClient.json.arrAppend("boxes", "$", newBox); //save the box to redis
-  res.json(newBox); //send the box back to the user
-}); //add a box to the list of boxes
+  const newBox = req.body;
+  newBox.id = parseInt(await redisClient.json.arrLen("boxes", "$")) + 1;
+  await redisClient.json.arrAppend("boxes", "$", newBox);
+  res.json(newBox);
+});
 
-// ORDER
 app.post("/orders", async (req, res) => {
   let order = req.body;
-  console.log("Received order:", order); // Log received order
+  console.log("Received order:", order);
   let responseStatus =
     order.productQuantity && order.shippingAddress ? 200 : 400;
 
   if (responseStatus === 200) {
     try {
       const createdOrder = await addOrder({ redisClient, order });
-      // Fetch the created order to get the orderId
-      console.log("Created order:", createdOrder); // Log created order
+      console.log("Created order:", createdOrder);
       res.status(200).json({ message: "Order added successfully", order: createdOrder });
     } catch (error) {
       console.error(error);
@@ -67,9 +56,7 @@ app.post("/orders", async (req, res) => {
   }
 });
 
-
 app.get("/orders/:orderId", async (req, res) => {
-  // get the order from the database
   const orderId = req.params.orderId;
   let order = await getOrder({ redisClient, orderId });
   if (order === null) {
@@ -77,9 +64,8 @@ app.get("/orders/:orderId", async (req, res) => {
   } else {
     res.json(order);
   }
-}); //return the order to the user
+});
 
-//ORDER ITEMS
 app.post("/orderItems", async (req, res) => {
   try {
     console.log("Schema:", Schema);
@@ -90,13 +76,11 @@ app.post("/orderItems", async (req, res) => {
     }
     console.log("Request Body:", req.body);
 
-    // Calling addOrderItem function and storing the result
     const orderItemId = await addOrderItem({
       redisClient,
       orderItem: req.body,
     });
 
-    // Responding with the result
     res
       .status(201)
       .json({ orderItemId, message: "Order item added successfully" });
@@ -116,3 +100,11 @@ app.get("/orderItems/:orderItemId", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Export the app for AWS Lambda
+exports.handler = async (event, context) => {
+  const server = app.listen(0, () => {
+    const port = server.address().port;
+    console.log(`API is listening on port: ${port}`);
+  });
+};
