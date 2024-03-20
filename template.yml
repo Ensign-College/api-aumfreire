@@ -2,10 +2,10 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 
 Resources:
-  MyLambdaFunction:
+  GetBoxesLambdaFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: index.handler
+      Handler: index.getBoxes
       Runtime: nodejs20.x
       CodeUri: .
       MemorySize: 128
@@ -14,11 +14,31 @@ Resources:
         Variables:
             REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
-        MyApi:
+        GetBoxesApi:
           Type: Api
           Properties:
-            Path: /myendpoint
+            Path: /boxes
             Method: get
+
+  PostBoxesLambdaFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.postBoxes
+      Runtime: nodejs20.x
+      CodeUri: .
+      MemorySize: 128
+      Timeout: 30
+      Environment:
+        Variables:
+            REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+      Events:
+        PostBoxesApi:
+          Type: Api
+          Properties:
+            Path: /boxes
+            Method: post
+
+  # Define other Lambda functions and API Gateway events for other routes similarly
 
   MyVPC:
     Type: AWS::EC2::VPC
