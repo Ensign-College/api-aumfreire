@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 
 Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
   GetBoxesLambdaFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -39,11 +44,6 @@ Resources:
             Method: post
 
   # Define other Lambda functions and API Gateway events for other routes similarly
-
-  MyVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
 
   MySubnet:
     Type: AWS::EC2::Subnet
