@@ -7,7 +7,7 @@ const Ajv = require("ajv");
 const ajv = new Ajv();
 
 const redisClient = Redis.createClient({
-  url: `redis://localhost:6379`
+  url: `redis://${process.env.REDIS_HOST}:6379`
 });
 
 // Handler for /boxes endpoint
