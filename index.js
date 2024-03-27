@@ -1,106 +1,58 @@
-const Redis = require('redis');
-const {addOrder, getOrder} = require("./services/orderservice.js");
-const {addOrderItem} = require("./services/orderItems.js");
+const Redis = require("redis");
+const { addOrderItem, getOrderItem } = require("./services/orderItems");
+const { addOrder, getOrder } = require("./services/orderservice");
 const fs = require("fs");
-const Schema = JSON.parse(fs.readFileSync("./services/orderItemSchema.json"));
-const Ajv = require('ajv');
+const Schema = JSON.parse(fs.readFileSync("./services/orderItemSchema.json", "utf8"));
+const Ajv = require("ajv");
 const ajv = new Ajv();
 
 const redisClient = Redis.createClient({
-    url:`redis://localhost:6379`
+  url: `redis://localhost:6379`
 });
 
-exports.boxesHandler = async (event, context) => {
-    try {
-        const boxes = await redisClient.json.get('boxes', { path: '$' });
-        return {
-            statusCode: 200,
-            body: JSON.stringify(boxes[0])
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            statusCode: 500,
-            body: "Internal Server Error"
-        };
+exports.handler = async (event, context) => {
+  const method = event.httpMethod;
+  const path = event.path;
+  const body = event.body ? JSON.parse(event.body) : null;
+
+  try {
+    if (method === 'GET' && path === '/boxes') {
+      const boxes = await redisClient.json.get("boxes", { path: "$" });
+      return {
+        statusCode: 200,
+        body: JSON.stringify(boxes[0])
+      };
+    } else if (method === 'POST' && path === '/boxes') {
+      const newBox = body;
+      newBox.id = parseInt(await redisClient.json.arrLen("boxes", "$")) + 1;
+      await redisClient.json.arrAppend("boxes", "$", newBox);
+      return {
+        statusCode: 200,
+        body: JSON.stringify(newBox)
+      };
+    } else if (method === 'POST' && path === '/orders') {
+      // Handle orders
+      // Your existing /orders endpoint logic goes here
+    } else if (method === 'GET' && path.startsWith('/orders/')) {
+      // Handle get order by ID
+      // Your existing /orders/:orderId endpoint logic goes here
+    } else if (method === 'POST' && path === '/orderItems') {
+      // Handle order items
+      // Your existing /orderItems endpoint logic goes here
+    } else if (method === 'GET' && path.startsWith('/orderItems/')) {
+      // Handle get order item by ID
+      // Your existing /orderItems/:orderItemId endpoint logic goes here
+    } else {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "Not Found" })
+      };
     }
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Internal Server Error" })
+    };
+  }
 };
-
-exports.ordersHandler = async (event, context) => {
-    try {
-        const order = JSON.parse(event.body);
-        let responseStatus = order.productQuantity
-            ? 200
-            : 400 && order.shippingAddress
-            ? 200
-            : 400;
-
-        if (responseStatus === 200) {
-            try {
-                await addOrder({ redisClient, order });
-            } catch (error) {
-                console.error(error);
-                return {
-                    statusCode: 500,
-                    body: "Internal Server Error"
-                };
-            }
-        }
-
-        return {
-            statusCode: responseStatus,
-            body: responseStatus === 200 ? "" : `Missing one of the following fields: ${exactMatchOrderFields()} ${partiallyMatchOrderFields()}`
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            statusCode: 400,
-            body: "Invalid request body"
-        };
-    }
-};
-
-exports.orderItemsHandler = async (event, context) => {
-    try {
-        const validate = ajv.compile(Schema);
-        const valid = validate(JSON.parse(event.body));
-        if (!valid) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: "Invalid request body" })
-            };
-        }
-
-        const orderItemId = await addOrderItem({ redisClient, orderItem: JSON.parse(event.body) });
-
-        return {
-            statusCode: 201,
-            body: JSON.stringify({ orderItemId, message: "Order item added successfully" })
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            statusCode: 500,
-            body: "Internal Server Error"
-        };
-    }
-};
-
-exports.ordersByIdHandler = async (event, context) => {
-    try {
-        const orderId = event.pathParameters.orderId;
-        const order = await getOrder({ redisClient, orderId });
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify(order)
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            statusCode: 500,
-            body: "Internal Server Error"
-        };
-    }
-};
-
