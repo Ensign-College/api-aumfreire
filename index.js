@@ -12,6 +12,7 @@ const redisClient = Redis.createClient({
 
 // Handler for /boxes endpoint
 exports.boxesHandler = async (event, context) => {
+  redisClient.connect().catch(console.error);
   try {
     const boxes = await redisClient.json.get("boxes", { path: "$" });
     return {
@@ -29,6 +30,7 @@ exports.boxesHandler = async (event, context) => {
 
 // Handler for /orders endpoint
 exports.ordersHandler = async (event, context) => {
+  redisClient.connect().catch(console.error);
   try {
     const order = JSON.parse(event.body);
     let responseStatus = order.productQuantity
@@ -64,6 +66,7 @@ exports.ordersHandler = async (event, context) => {
 
 // Handler for /orderItems endpoint
 exports.orderItemsHandler = async (event, context) => {
+  redisClient.connect().catch(console.error);
   try {
     const validate = ajv.compile(Schema);
     const valid = validate(JSON.parse(event.body));
@@ -91,6 +94,7 @@ exports.orderItemsHandler = async (event, context) => {
 
 // Handler for /orders/{orderId} endpoint
 exports.ordersByIdHandler = async (event, context) => {
+  redisClient.connect().catch(console.error);
   try {
     const orderId = event.pathParameters.orderId;
     const order = await getOrder({ redisClient, orderId });
@@ -110,6 +114,7 @@ exports.ordersByIdHandler = async (event, context) => {
 
 // Handler for /orderItems/{orderItemId} endpoint
 exports.orderItemsByIdHandler = async (event, context) => {
+  redisClient.connect().catch(console.error);
   try {
     const orderItemId = event.pathParameters.orderItemId;
     const orderItem = await getOrderItem({ redisClient, orderItemId });
