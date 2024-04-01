@@ -4,9 +4,19 @@ const { addOrder, getOrder } = require("./services/orderservice");
 const fs = require("fs");
 const Ajv = require("ajv");
 
-const Schema = JSON.parse(
-  fs.readFileSync("./services/orderItemSchema.json", "utf8")
-);
+const Schema = {
+  "type": "object",
+  "properties": {
+    "orderId": { "type": "string" },
+    "productId": { "type": "string" },
+    "quantity": { "type": "integer" },
+    "customerId":{"type": "string"}
+  },
+  "required": [ "customerId", "orderId", "productId", "quantity" ]
+}
+//JSON.parse(
+//   fs.readFileSync("./services/orderItemSchema.json", "utf8")
+// );
 const ajv = new Ajv();
 
 const redisClient = Redis.createClient({
