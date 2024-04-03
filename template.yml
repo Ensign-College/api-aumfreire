@@ -21,6 +21,9 @@ Resources:
       CodeUri: .
       Handler: index.orderItemsHandler
       Runtime: nodejs20.x
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
       Events:
         OrderItemsApiEvent:
           Type: Api
@@ -34,6 +37,9 @@ Resources:
       CodeUri: .
       Handler: index.ordersByIdHandler
       Runtime: nodejs20.x
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
       Events:
         OrdersByIdApiEvent:
           Type: Api
@@ -47,6 +53,9 @@ Resources:
       CodeUri: .
       Handler: index.boxesHandler
       Runtime: nodejs20.x
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
       Events:
         BoxesApiEvent:
           Type: Api
