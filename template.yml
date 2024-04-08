@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Resources:
@@ -8,6 +8,10 @@ Resources:
       CodeUri: .
       Handler: index.ordersHandler
       Runtime: nodejs20.x
+      Timeout: 10 # Increase timeout to 10 seconds
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         ApiEvent:
           Type: Api
@@ -21,9 +25,10 @@ Resources:
       CodeUri: .
       Handler: index.orderItemsHandler
       Runtime: nodejs20.x
+      Timeout: 10 # Increase timeout to 10 seconds
       Environment:
         Variables:
-          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         OrderItemsApiEvent:
           Type: Api
@@ -37,9 +42,10 @@ Resources:
       CodeUri: .
       Handler: index.ordersByIdHandler
       Runtime: nodejs20.x
+      Timeout: 10 # Increase timeout to 10 seconds
       Environment:
         Variables:
-          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         OrdersByIdApiEvent:
           Type: Api
@@ -53,47 +59,16 @@ Resources:
       CodeUri: .
       Handler: index.boxesHandler
       Runtime: nodejs20.x
+      Timeout: 10 # Increase timeout to 10 seconds
       Environment:
         Variables:
-          REDIS_HOST: !GetAtt MyElasticacheRedis.Attributes.RedisEndpoint.Address
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         BoxesApiEvent:
           Type: Api
           Properties:
             Path: /boxes
             Method: get
-
-
-
-  # # Add IAM roles with required tag permissions
-  # OrderItemsFunctionRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     RoleName: MyOrderItemsFunctionRole    
-  #     AssumeRolePolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service: lambda.amazonaws.com
-  #           Action: sts:AssumeRole
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  #     Tags:
-  #       - Key: MyTag
-  #         Value: MyValue
-
-
-  # MyVPC:
-  #   Type: AWS::EC2::VPC
-  #   Properties:
-  #     CidrBlock: 10.0.0.0/16
-
-  # MySubnet:
-  #   Type: AWS::EC2::Subnet
-  #   Properties:
-  #     VpcId: !Ref MyVPC
-  #     CidrBlock: 10.0.0.0/24
 
   MyElasticacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
@@ -103,7 +78,7 @@ Resources:
         - subnet-02c217f126c0ce1d5
 
   MyElasticacheRedis:
-    Type: 'AWS::ElastiCache::CacheCluster'
+    Type: "AWS::ElastiCache::CacheCluster"
     Properties:
       CacheNodeType: cache.t2.micro
       Engine: redis
