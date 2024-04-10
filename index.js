@@ -34,6 +34,8 @@ exports.boxesHandler = async (event, context) => {
             statusCode: 500,
             body: "Internal Server Error"
         };
+    } finally {
+        await redisClient.quit();
     }
 };
 
